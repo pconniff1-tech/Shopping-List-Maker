@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shopping List Generator</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&display=swap">
+  <style>
+    :root {
+      --body-bg: #d7e5f3;
+      --text-color: #1d2a43;
+      --heading-color: #0f1c33;
+      --card-border: #a9bfd5;
+      --card-bg: #ffffff;
+      --card-shadow: 0 18px 45px -30px rgba(21, 39, 67, 0.35);
+      --label-color: #4b5f7b;
+      --input-border: #2e5894;
+      --input-bg: #e3eaf5;
+      --input-text: #1d2a43;
+      --input-focus: rgba(46, 88, 148, 0.15);
+      --table-border: #d8e4f1;
+      --muted-color: #5f728d;
+      --button-border: #2e5894;
+      --button-border-bottom: #254a7d;
+      --button-text: #113455;
+      --button-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        inset 0 -5px 10px rgba(13, 63, 113, 0.14),
+        0 4px 10px rgba(30, 85, 136, 0.2);
+      --button-gloss: rgba(255, 255, 255, 0.32);
+      --button-gradient-top: #6ab6ef;
+      --button-gradient-bottom: #4c95d0;
+      --button-hover-text: #0b2a48;
+      --button-hover-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.66),
+        inset 0 -6px 11px rgba(13, 63, 113, 0.16),
+        0 5px 12px rgba(30, 85, 136, 0.23);
+      --button-hover-gloss: rgba(255, 255, 255, 0.38);
+      --button-hover-gradient-top: #5ea7e2;
+      --button-hover-gradient-bottom: #3f81bd;
+      --button-active-shadow:
+        inset 0 2px 5px rgba(8, 39, 73, 0.2),
+        inset 0 -1px 4px rgba(255, 255, 255, 0.2),
+        0 2px 6px rgba(30, 85, 136, 0.2);
+      --toggle-border: #9fb1ca;
+      --toggle-bg: #e7eef8;
+      --toggle-text: #2a3d58;
+      --toggle-hover-bg: #d7e2ef;
+      --aisle-item-border: #a9bfd5;
+      --aisle-item-bg: #eef4fb;
+      --aisle-drag-border: #264a84;
+      --aisle-drag-bg: rgba(46, 88, 148, 0.12);
+      --output-bg: #eaf1fb;
+      --output-border: #d7e3f0;
+      --aisle-heading-color: #223851;
+      --list-text-color: #2c3b57;
+      --action-border: #9faec7;
+      --action-bg: #e7eef8;
+      --action-text: #2b3c55;
+      --action-hover-bg: #d7e2ef;
+      --sticky-bg: #ffffff;
+      --weekly-border: #d7e1ee;
+      --weekly-bg: #f7fbff;
+      --weekly-text: #1f2d42;
+      --divider-border: #c7d6ea;
+    }
+
+    html, body { height: 100%; }
+    body { font-family: 'Lora', serif; margin: 0; padding: 14px; box-sizing: border-box; background: var(--body-bg); color: var(--text-color); overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+    h1, h2, h3 { margin-bottom: 10px; color: var(--heading-color); }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .top-bar h1 { margin: 0; }
+    .theme-controls { display: flex; align-items: center; gap: 8px; }
+    .flex { display: flex; gap: 16px; }
+    .columns { display: flex; gap: 0; flex: 1; min-height: 0; }
+    .card { border: 1px solid var(--card-border); border-radius: 14px; padding: 16px; background: var(--card-bg); box-shadow: var(--card-shadow); }
+    .columns > .card { min-height: 0; }
+    .card label { display: block; margin: 8px 0 2px; color: var(--label-color); }
+      .card input, .card select, .card textarea { width: 100%; margin-bottom: 8px; padding: 10px 12px; box-sizing: border-box; border-radius: 10px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); height: 42px; }
+    .card input:focus, .card select:focus, .card textarea:focus, .search-input:focus { outline: none; border-color: var(--input-border); box-shadow: 0 0 0 3px var(--input-focus); }
+    .aisle-input { height: 42px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+    th, td { padding: 4px 6px; border: 1px solid var(--table-border); text-align: left; }
+    tbody tr { height: 24px; }
+    .small { font-size: 0.85rem; color: var(--muted-color); }
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 8px;
+      margin-top: 4px;
+      padding: 0 14px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--button-border);
+      border-bottom-color: var(--button-border-bottom);
+      background:
+        radial-gradient(120% 140% at 30% 16%, var(--button-gloss) 0%, rgba(255, 255, 255, 0) 45%),
+        linear-gradient(180deg, var(--button-gradient-top) 0%, var(--button-gradient-bottom) 100%);
+      color: var(--button-text);
+      box-shadow: var(--button-shadow);
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.16s ease, filter 0.16s ease;
+    }
+    button:hover {
+      filter: brightness(1.02) saturate(1.03);
+      background:
+        radial-gradient(120% 140% at 30% 16%, var(--button-hover-gloss) 0%, rgba(255, 255, 255, 0) 45%),
+        linear-gradient(180deg, var(--button-hover-gradient-top) 0%, var(--button-hover-gradient-bottom) 100%);
+      color: var(--button-hover-text);
+      box-shadow: var(--button-hover-shadow);
+    }
+    .theme-toggle { height: 28px; min-width: 58px; margin: 0; padding: 0 10px; border-radius: 14px; border: 1px solid var(--toggle-border); background: var(--toggle-bg); color: var(--toggle-text); box-shadow: none; font-size: 12px; }
+    .theme-toggle:hover { background: var(--toggle-hover-bg); box-shadow: none; }
+    #aisle-toggle, #weekly-toggle { width: 25px; min-width: 25px; height: 25px; padding: 0; border-radius: 6px; font-size: 12px; margin-top: 0; }
+    #add-aisle { height: 25px; min-height: 25px; padding: 0 10px; border-radius: 6px; font-size: 12px; }
+    .checkbox-cell { text-align: center; }
+    .aisle-item { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; padding: 8px 10px; border: 1px solid var(--aisle-item-border); border-radius: 10px; background: var(--aisle-item-bg); cursor: grab; }
+    .aisle-item.dragging { opacity: 0.45; }
+    .aisle-item.drag-over { border-color: var(--aisle-drag-border); background: var(--aisle-drag-bg); }
+    .output pre { background: var(--output-bg); border: 1px solid var(--output-border); padding: 12px; border-radius: 10px; }
+    #generated-list { font-family: 'Lora', serif; }
+    .aisle-heading { font-weight: bold; margin-top: 12px; color: var(--aisle-heading-color); font-size: 16px; }
+    .aisle-items { margin: 0; padding-left: 0; list-style-type: none; color: var(--list-text-color); }
+    .aisle-items li { margin: 2px 0; font-size: 14px; }
+    .quantity-input { width: 50px; min-width: 50px; max-width: 50px; height: 25px; padding: 0 6px; }
+    .item-action-btn { width: 25px; min-width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; padding: 0; margin: 0 2px; border: 1px solid var(--action-border); border-radius: 6px; background: var(--action-bg); color: var(--action-text); cursor: pointer; }
+    .saved-action-btn { width: 25px; min-width: 25px; height: 25px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; line-height: 1; padding: 0; margin: 0 2px; border: 1px solid var(--action-border); border-radius: 6px; background: var(--action-bg); color: var(--action-text); cursor: pointer; }
+    .item-action-btn:hover, .saved-action-btn:hover { background: var(--action-hover-bg); }
+    .item-actions { display: inline-flex; }
+    .left-panel { display: flex; flex-direction: column; height: 100%; overflow: hidden; box-sizing: border-box; }
+    .right-panel { height: 100%; overflow-y: auto; box-sizing: border-box; }
+    .panel-resizer { flex: 0 0 16px; cursor: col-resize; display: flex; align-items: center; justify-content: center; align-self: stretch; }
+    .panel-resizer::after { content: ''; width: 4px; height: 48px; border-radius: 2px; background: var(--card-border); transition: background 0.15s; }
+    .panel-resizer:hover::after, .panel-resizer.dragging::after { background: var(--input-border); }
+    .item-panel-top { position: sticky; top: 0; z-index: 1; background: var(--sticky-bg); padding-bottom: 16px; }
+    #items-container { overflow-y: auto; flex: 1; min-height: 0; }
+    .weekly-list-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 4px; }
+    .weekly-list-item span { flex: 1; color: var(--list-text-color); }
+    #weekly-date { width: 120px; min-width: 120px; max-width: 120px; height: 42px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--weekly-border); background: var(--weekly-bg); color: var(--weekly-text); }
+    .search-input { width: 100%; height: 32px; margin: 0; padding: 0 10px; border-radius: 8px; border: 1px solid var(--input-border); background: var(--input-bg); color: var(--input-text); }
+    .section-divider { border-top: 1px solid var(--divider-border); }
+    button:active {
+      transform: translateY(1px);
+      box-shadow: var(--button-active-shadow);
+    }
+
+    /* ── Gear menu ── */
+    .gear-menu-wrap { position: relative; display: inline-flex; }
+    .gear-btn { width: 25px; min-width: 25px; height: 25px; padding: 0; border-radius: 6px; font-size: 14px; margin: 0; }
+    .gear-dropdown {
+      display: none; position: absolute; right: 0; top: calc(100% + 4px);
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      z-index: 200; min-width: 172px; padding: 4px 0;
+    }
+    .gear-dropdown.open { display: block; }
+    .gear-dropdown-item {
+      display: block; width: 100%; padding: 10px 16px;
+      background: none; border: none; border-radius: 0; box-shadow: none;
+      text-align: left; color: var(--text-color); font-family: 'Lora', serif;
+      font-size: 13px; cursor: pointer; margin: 0; height: auto;
+    }
+    .gear-dropdown-item:hover { background: var(--aisle-item-bg); box-shadow: none; filter: none; }
+    .gear-dropdown-item:active { transform: none; box-shadow: none; }
+
+    /* ── Update toast ── */
+    .update-toast {
+      display: none; position: fixed; bottom: 20px; right: 20px;
+      background: var(--card-bg); border: 1px solid var(--card-border);
+      border-radius: 14px; padding: 16px 18px 14px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+      z-index: 1000; min-width: 250px; max-width: 310px;
+    }
+    .update-toast.visible { display: block; }
+    .update-toast-title { font-weight: bold; margin-bottom: 6px; color: var(--heading-color); font-size: 14px; padding-right: 20px; }
+    .update-toast-msg { font-size: 13px; color: var(--text-color); margin-bottom: 8px; }
+    .update-progress-wrap { background: var(--input-bg); border-radius: 6px; height: 14px; overflow: hidden; margin-bottom: 10px; }
+    .update-progress-bar {
+      height: 100%; border-radius: 6px; width: 0%;
+      background: linear-gradient(90deg, var(--button-gradient-bottom), var(--button-gradient-top));
+      transition: width 0.4s ease; position: relative; overflow: hidden;
+    }
+    .update-progress-bar::after {
+      content: ''; position: absolute; top: 0; left: -60%; width: 50%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+      animation: progress-shine 1.4s linear infinite;
+    }
+    @keyframes progress-shine { from { left: -60%; } to { left: 120%; } }
+    .update-toast-close {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: none; box-shadow: none;
+      padding: 0; width: 20px; height: 20px; min-width: 20px;
+      font-size: 15px; color: var(--muted-color); cursor: pointer; line-height: 1; margin: 0;
+    }
+    .update-toast-close:hover { color: var(--text-color); box-shadow: none; filter: none; }
+    .update-toast-close:active { transform: none; box-shadow: none; }
+    .update-toast-btns { display: flex; gap: 8px; margin-top: 8px; }
+    .update-toast-btns button { height: 32px; padding: 0 14px; border-radius: 8px; font-size: 12px; margin: 0; }
+
+    body.green-theme {
+      --body-bg: #deeedc;
+      --text-color: #1f3323;
+      --heading-color: #102717;
+      --card-border: #a6cbaa;
+      --card-bg: #ffffff;
+      --card-shadow: 0 18px 45px -30px rgba(25, 63, 35, 0.28);
+      --label-color: #496451;
+      --input-border: #3a8a4b;
+      --input-bg: #e5f2e3;
+      --input-text: #1f3323;
+      --input-focus: rgba(58, 138, 75, 0.16);
+      --table-border: #d8e8d7;
+      --muted-color: #5f7864;
+      --button-border: #3a8a4b;
+      --button-border-bottom: #2e6f3c;
+      --button-text: #10361a;
+      --button-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.62),
+        inset 0 -5px 10px rgba(21, 79, 36, 0.16),
+        0 4px 10px rgba(40, 109, 56, 0.2);
+      --button-gloss: rgba(255, 255, 255, 0.34);
+      --button-gradient-top: #72ce7c;
+      --button-gradient-bottom: #4da75a;
+      --button-hover-text: #0d2d15;
+      --button-hover-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.68),
+        inset 0 -6px 11px rgba(21, 79, 36, 0.18),
+        0 5px 12px rgba(40, 109, 56, 0.22);
+      --button-hover-gloss: rgba(255, 255, 255, 0.4);
+      --button-hover-gradient-top: #65bd70;
+      --button-hover-gradient-bottom: #3f9150;
+      --button-active-shadow:
+        inset 0 2px 5px rgba(15, 56, 24, 0.2),
+        inset 0 -1px 4px rgba(255, 255, 255, 0.22),
+        0 2px 6px rgba(40, 109, 56, 0.2);
+      --toggle-border: #9dbca1;
+      --toggle-bg: #e8f3e7;
+      --toggle-text: #284830;
+      --toggle-hover-bg: #d7e9d5;
+      --aisle-item-border: #a6cbaa;
+      --aisle-item-bg: #eff8ee;
+      --aisle-drag-border: #2f7140;
+      --aisle-drag-bg: rgba(58, 138, 75, 0.12);
+      --output-bg: #ecf6ea;
+      --output-border: #d8e9d6;
+      --aisle-heading-color: #1d4428;
+      --list-text-color: #295036;
+      --action-border: #9ab89e;
+      --action-bg: #e8f3e7;
+      --action-text: #2a4631;
+      --action-hover-bg: #d7e9d5;
+      --sticky-bg: #ffffff;
+      --weekly-border: #d2e4d0;
+      --weekly-bg: #f7fcf6;
+      --weekly-text: #1d3524;
+      --divider-border: #c9dfc7;
+    }
+
+    body.dark-mode {
+      --body-bg: #0f1828;
+      --text-color: #d8e3f4;
+      --heading-color: #e7eefb;
+      --card-border: #2e4462;
+      --card-bg: #151f33;
+      --card-shadow: 0 18px 45px -30px rgba(0, 0, 0, 0.7);
+      --label-color: #a9bbd7;
+      --input-border: #4671af;
+      --input-bg: #1a2840;
+      --input-text: #dce7fb;
+      --input-focus: rgba(70, 113, 175, 0.25);
+      --table-border: #2e4462;
+      --muted-color: #95a8c8;
+      --button-border: #4671af;
+      --button-border-bottom: #355a8f;
+      --button-text: #e8f1ff;
+      --button-shadow:
+        inset 0 1px 0 rgba(224, 236, 255, 0.2),
+        inset 0 -5px 10px rgba(8, 22, 45, 0.3),
+        0 4px 10px rgba(0, 0, 0, 0.32);
+      --button-gloss: rgba(227, 238, 255, 0.2);
+      --button-gradient-top: #507eb5;
+      --button-gradient-bottom: #365e8f;
+      --button-hover-text: #f2f7ff;
+      --button-hover-shadow:
+        inset 0 1px 0 rgba(224, 236, 255, 0.24),
+        inset 0 -6px 11px rgba(8, 22, 45, 0.33),
+        0 5px 12px rgba(0, 0, 0, 0.36);
+      --button-hover-gloss: rgba(227, 238, 255, 0.28);
+      --button-hover-gradient-top: #6a9ad0;
+      --button-hover-gradient-bottom: #4672ab;
+      --button-active-shadow:
+        inset 0 2px 5px rgba(8, 22, 45, 0.34),
+        inset 0 -1px 4px rgba(224, 236, 255, 0.16),
+        0 2px 6px rgba(0, 0, 0, 0.34);
+      --toggle-border: #4e6e99;
+      --toggle-bg: #1e2f49;
+      --toggle-text: #d6e2f8;
+      --toggle-hover-bg: #263a59;
+      --aisle-item-border: #2e4462;
+      --aisle-item-bg: #18253b;
+      --aisle-drag-border: #3d6bad;
+      --aisle-drag-bg: rgba(61, 107, 173, 0.2);
+      --output-bg: #101c2f;
+      --output-border: #2e4462;
+      --aisle-heading-color: #d5e3fa;
+      --list-text-color: #c2d2ea;
+      --action-border: #4b668f;
+      --action-bg: #1e2f49;
+      --action-text: #d7e5fb;
+      --action-hover-bg: #294061;
+      --sticky-bg: #151f33;
+      --weekly-border: #4671af;
+      --weekly-bg: #1a2840;
+      --weekly-text: #dce7fb;
+      --divider-border: #2e4462;
+    }
+
+    body.dark-mode.green-theme {
+      --body-bg: #101c14;
+      --text-color: #dceadf;
+      --heading-color: #edf7ef;
+      --card-border: #2d4e36;
+      --card-bg: #16231a;
+      --card-shadow: 0 18px 45px -30px rgba(0, 0, 0, 0.72);
+      --label-color: #aacbb0;
+      --input-border: #4f9e60;
+      --input-bg: #1b3120;
+      --input-text: #e0f2e3;
+      --input-focus: rgba(79, 158, 96, 0.25);
+      --table-border: #2d4e36;
+      --muted-color: #9fbd9f;
+      --button-border: #4f9e60;
+      --button-border-bottom: #3e7f4d;
+      --button-text: #ecfff0;
+      --button-shadow:
+        inset 0 1px 0 rgba(229, 245, 232, 0.2),
+        inset 0 -5px 10px rgba(10, 34, 16, 0.3),
+        0 4px 10px rgba(0, 0, 0, 0.34);
+      --button-gloss: rgba(229, 245, 232, 0.18);
+      --button-gradient-top: #5eaf70;
+      --button-gradient-bottom: #3f8250;
+      --button-hover-text: #f4fff6;
+      --button-hover-shadow:
+        inset 0 1px 0 rgba(229, 245, 232, 0.24),
+        inset 0 -6px 11px rgba(10, 34, 16, 0.33),
+        0 5px 12px rgba(0, 0, 0, 0.38);
+      --button-hover-gloss: rgba(229, 245, 232, 0.24);
+      --button-hover-gradient-top: #73c184;
+      --button-hover-gradient-bottom: #509364;
+      --button-active-shadow:
+        inset 0 2px 5px rgba(10, 34, 16, 0.34),
+        inset 0 -1px 4px rgba(229, 245, 232, 0.16),
+        0 2px 6px rgba(0, 0, 0, 0.34);
+      --toggle-border: #4f7b58;
+      --toggle-bg: #1f3525;
+      --toggle-text: #d9efdd;
+      --toggle-hover-bg: #29442f;
+      --aisle-item-border: #2d4e36;
+      --aisle-item-bg: #182a1d;
+      --aisle-drag-border: #59a16a;
+      --aisle-drag-bg: rgba(79, 158, 96, 0.2);
+      --output-bg: #122014;
+      --output-border: #2d4e36;
+      --aisle-heading-color: #d7f0db;
+      --list-text-color: #c7dfcb;
+      --action-border: #4b7153;
+      --action-bg: #1f3525;
+      --action-text: #dcf4e0;
+      --action-hover-bg: #2a4931;
+      --sticky-bg: #16231a;
+      --weekly-border: #4f9e60;
+      --weekly-bg: #1b3120;
+      --weekly-text: #e0f2e3;
+      --divider-border: #2d4e36;
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <h1>Shopping List Generator</h1>
+    <div class="theme-controls">
+      <button id="theme-toggle" type="button" class="theme-toggle" aria-label="Toggle dark mode" aria-pressed="false">Dark</button>
+      <button id="color-theme-toggle" type="button" class="theme-toggle" aria-label="Toggle green theme" aria-pressed="false">Green</button>
+    </div>
+  </div>
+  <div class="columns" style="align-items: flex-start;">
+    <section class="card left-panel" style="flex: 1;">
+      <div class="item-panel-top">
+        <h2>Add or Edit Item</h2>
+        <form id="item-form">
+          <input type="hidden" id="item-id" />
+        <label>Name</label>
+        <input type="text" id="item-name" placeholder="e.g., Milk" required />
+        <label>Aisle</label>
+        <select id="item-aisle" required></select>
+        <button type="submit">Save Item</button>
+        <button type="button" id="clear-form">Clear</button>
+      </form>
+      </div>
+
+      <div style="margin-bottom:8px;">
+        <label for="item-search" style="margin:0 0 4px 0; font-size:12px; display:block;">Search items</label>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <input type="search" id="item-search" class="search-input" placeholder="Search by name or aisle" />
+          <button id="clear-search" type="button" style="height:32px; min-height:32px; margin:0; padding:0 10px; border-radius:8px; font-size:12px;">Clear</button>
+          <button id="search-to-add" type="button" style="height:32px; min-height:32px; margin:0; padding:0 10px; border-radius:8px; font-size:12px;" title="Copy search text to Add form">Add</button>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <h2 style="margin:0;">Your Items</h2>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <label for="item-sort" style="margin:0; font-size:12px;">Sort:</label>
+          <select id="item-sort" style="width:120px; height:25px; padding:0 6px; margin:0; border-radius:6px;">
+            <option value="name" selected>Name</option>
+            <option value="aisle">Aisle</option>
+            <option value="aisle-order">Aisle Order</option>
+          </select>
+        </div>
+      </div>
+      <button id="clear-quantities" type="button" title="Clear all item quantities" style="width:50px; min-width:50px; height:25px; margin-bottom:8px; padding:0; border-radius:6px; font-size:11px;">Clear</button>
+      <div id="items-container"></div>
+    </section>
+
+    <div class="panel-resizer" id="panel-resizer"></div>
+
+    <section class="card right-panel" style="flex: 1;">
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-bottom: 6px;">
+        <h2 style="margin:0;">Aisle Order</h2>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button id="aisle-help-toggle" type="button" style="height:25px; min-height:25px; padding:0 10px; border-radius:6px; font-size:12px; margin:0; white-space:nowrap;">Aisle Help: Off</button>
+          <button id="aisle-toggle" type="button" style="margin-left:0;">▶</button>          <div class="gear-menu-wrap">
+            <button id="gear-btn" class="gear-btn" type="button" title="Settings">&#9881;</button>
+            <div id="gear-dropdown" class="gear-dropdown">
+              <button class="gear-dropdown-item" id="check-updates-btn">Check for Updates</button>
+            </div>
+          </div>        </div>
+      </div>
+      <div id="aisle-panel" style="display:none;">
+        <div style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
+        <input id="new-aisle-name" type="text" placeholder="Add aisle" style="flex:1;" />
+        <button id="add-aisle" type="button">Add</button>
+      </div>
+      <div id="aisle-list"></div>
+      <button id="update-aisle-order" type="button">Save Aisle Order</button>
+      </div>
+
+      <h2>Weekly List</h2>
+      <label>Select date</label>
+      <input type="date" id="weekly-date" />
+      <button id="generate-list" type="button">Save List</button>
+      <button id="discard-list" type="button">Discard</button>
+      <button id="print-list" type="button">Print Generated List</button>
+      <button id="close-viewed-list" type="button">Close List</button>
+      <div class="output" id="generated-list"></div>
+
+      <div class="section-divider" style="display:flex; align-items:center; justify-content:space-between; margin-top:22px; margin-bottom:10px; padding-top:12px;">
+        <h3 style="margin:0;">Saved weekly lists</h3>
+        <button id="weekly-toggle" type="button">▶</button>
+      </div>
+      <div id="weekly-panel" style="display:none;">
+        <div id="weekly-lists"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="renderer.js"></script>
+
+  <!-- Update toast -->
+  <div id="update-toast" class="update-toast">
+    <button class="update-toast-close" id="update-toast-close">&#x2715;</button>
+    <div class="update-toast-title" id="update-toast-title">Updates</div>
+    <div class="update-toast-msg" id="update-toast-msg"></div>
+    <div class="update-progress-wrap" id="update-progress-wrap" style="display:none;">
+      <div class="update-progress-bar" id="update-progress-bar"></div>
+    </div>
+    <div class="update-toast-btns" id="update-toast-btns" style="display:none;"></div>
+  </div>
+</body>
+</html>
