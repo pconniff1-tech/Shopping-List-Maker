@@ -10,6 +10,7 @@ const state = {
   aisleHelpCustom: {},
   listDirty: false,
   listSavedDate: null,
+  currentListId: null,
 };
 
 function getDefaultAisleHelpText(aisle) {
@@ -174,6 +175,7 @@ async function loadWeeklyLists() {
 
         state.listDirty = false;
         state.listSavedDate = list.date;
+        state.currentListId = id;
         refreshListPreview();
       }
     });
@@ -468,31 +470,51 @@ async function saveAisleOrder() {
 }
 
 async function saveWeeklyList() {
-  // Sync any visible inputs back into state (handles filtered view)
+  return saveAsNewList();
+}
+
+async function saveAsNewList() {
+  const quantities = getQuantitiesForSave();
+  if (!quantities) return;
+  const dateField = document.getElementById('weekly-date').value;
+  const dateValue = dateField || new Date().toISOString().split('T')[0];
+  const saved = await window.api.saveWeeklyList(dateValue, quantities);
+  state.currentListId = saved.id;
+  state.listDirty = false;
+  state.listSavedDate = dateValue;
+  refreshListPreview();
+  await loadWeeklyLists();
+}
+
+async function updateCurrentList() {
+  if (!state.currentListId) { alert('No saved list is currently open to update.'); return; }
+  const quantities = getQuantitiesForSave();
+  if (!quantities) return;
+  const dateField = document.getElementById('weekly-date').value;
+  const dateValue = dateField || state.listSavedDate || new Date().toISOString().split('T')[0];
+  await window.api.updateWeeklyList(state.currentListId, dateValue, quantities);
+  state.listDirty = false;
+  state.listSavedDate = dateValue;
+  refreshListPreview();
+  await loadWeeklyLists();
+}
+
+function getQuantitiesForSave() {
   document.querySelectorAll('.quantity-input').forEach(input => {
     const id = Number(input.dataset.id);
     const qty = Math.max(0, parseInt(input.value) || 0);
     if (qty > 0) state.itemQuantities[id] = qty;
     else delete state.itemQuantities[id];
   });
-
   const quantities = {};
   Object.entries(state.itemQuantities).forEach(([id, qty]) => {
     if (qty > 0) quantities[id] = qty;
   });
-
   if (Object.keys(quantities).length === 0) {
     alert('Enter quantities for at least one item.');
-    return;
+    return null;
   }
-
-  const dateField = document.getElementById('weekly-date').value;
-  const dateValue = dateField || new Date().toISOString().split('T')[0];
-  await window.api.saveWeeklyList(dateValue, quantities);
-  state.listDirty = false;
-  state.listSavedDate = dateValue;
-  refreshListPreview();
-  await loadWeeklyLists();
+  return quantities;
 }
 
 function clearForm() {
@@ -505,6 +527,7 @@ function resetQuantities() {
   state.itemQuantities = {};
   state.listDirty = false;
   state.listSavedDate = null;
+  state.currentListId = null;
   state.lastItemCount = 0;
   document.querySelectorAll('.quantity-input').forEach((input) => {
     input.value = 0;
@@ -723,7 +746,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('update-aisle-order').addEventListener('click', saveAisleOrder);
-  document.getElementById('generate-list').addEventListener('click', saveWeeklyList);
+
+  // Save List dropdown
+  const saveListDropdown = document.getElementById('save-list-dropdown');
+  const saveUpdateBtn = document.getElementById('save-update-btn');
+  const saveNewBtn = document.getElementById('save-new-btn');
+  document.getElementById('generate-list').addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Enable/disable Update based on whether a list is loaded
+    saveUpdateBtn.disabled = !state.currentListId;
+    saveListDropdown.classList.toggle('open');
+  });
+  document.addEventListener('click', () => saveListDropdown.classList.remove('open'));
+  saveUpdateBtn.addEventListener('click', () => { saveListDropdown.classList.remove('open'); updateCurrentList(); });
+  saveNewBtn.addEventListener('click', () => { saveListDropdown.classList.remove('open'); saveAsNewList(); });
+
   document.getElementById('discard-list').addEventListener('click', () => {
     const hasItems = Object.values(state.itemQuantities).some(q => q > 0);
     if (!hasItems || confirm('Discard the current list?')) {
@@ -856,6 +893,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     gearDropdown.classList.remove('open');
   });
 
+  const aboutBtn = document.getElementById('about-btn');
+  aboutBtn.addEventListener('click', async () => {
+    gearDropdown.classList.remove('open');
+    const version = await window.api.getVersion();
+    showUpdateToast('ok', 'Shopping List Generator  \u2014  Version ' + version);
+  });
+
   checkUpdatesBtn.addEventListener('click', () => {
     gearDropdown.classList.remove('open');
     showUpdateToast('checking', 'Checking for updates\u2026');
@@ -906,9 +950,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   window.api.onUpdateStatus((status) => {
     const { type, version, percent } = status;
     if (type === 'available') {
-      showUpdateToast('available', 'Version ' + version + ' found. Downloading\u2026');
+      showUpdateToast('available', 'Current version: ' + status.currentVersion + '  \u2192  New version: ' + version + '. Downloading\u2026');
     } else if (type === 'not-available') {
-      showUpdateToast('ok', 'You have the latest version.');
+      showUpdateToast('ok', 'You have the latest version (' + version + ').');
     } else if (type === 'progress') {
       showUpdateToast('progress', '', percent);
     } else if (type === 'downloaded') {

@@ -136,6 +136,13 @@ function saveWeeklyList(date, quantities) {
   return getWeeklyList(info.lastInsertRowid);
 }
 
+function updateWeeklyList(id, date, quantities) {
+  const now = new Date().toISOString();
+  const json = JSON.stringify(quantities);
+  db.prepare('UPDATE weekly_lists SET date = ?, item_ids = ?, generated_at = ? WHERE id = ?').run(date, json, now, id);
+  return getWeeklyList(id);
+}
+
 function getWeeklyList(id) {
   return db.prepare('SELECT * FROM weekly_lists WHERE id = ?').get(id);
 }
@@ -159,6 +166,7 @@ module.exports = {
   setAisleOrder,
   generateList,
   saveWeeklyList,
+  updateWeeklyList,
   getWeeklyList,
   getWeeklyLists,
   deleteWeeklyList,

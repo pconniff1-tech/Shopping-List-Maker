@@ -29,10 +29,10 @@ app.whenReady().then(() => {
   createWindow();
 
   autoUpdater.on('update-available', (info) => {
-    mainWindow.webContents.send('update-status', { type: 'available', version: info.version });
+    mainWindow.webContents.send('update-status', { type: 'available', version: info.version, currentVersion: app.getVersion() });
   });
   autoUpdater.on('update-not-available', () => {
-    mainWindow.webContents.send('update-status', { type: 'not-available' });
+    mainWindow.webContents.send('update-status', { type: 'not-available', version: app.getVersion() });
   });
   autoUpdater.on('download-progress', (progress) => {
     mainWindow.webContents.send('update-status', { type: 'progress', percent: Math.round(progress.percent) });
@@ -62,9 +62,12 @@ ipcMain.handle('db.getAisleOrder', async () => db.getAisleOrder());
 ipcMain.handle('db.setAisleOrder', async (event, aisles) => db.setAisleOrder(aisles));
 ipcMain.handle('db.generateList', async (event, ids) => db.generateList(ids));
 ipcMain.handle('db.saveWeeklyList', async (event, date, quantities) => db.saveWeeklyList(date, quantities));
+ipcMain.handle('db.updateWeeklyList', async (event, id, date, quantities) => db.updateWeeklyList(id, date, quantities));
 ipcMain.handle('db.getWeeklyLists', async () => db.getWeeklyLists());
 ipcMain.handle('db.getWeeklyList', async (event, id) => db.getWeeklyList(id));
 ipcMain.handle('db.deleteWeeklyList', async (event, id) => db.deleteWeeklyList(id));
+
+ipcMain.handle('app.getVersion', () => app.getVersion());
 
 ipcMain.handle('app.checkForUpdates', async () => {
   autoUpdater.checkForUpdates().catch(() => {}); // errors surface via the 'error' event
