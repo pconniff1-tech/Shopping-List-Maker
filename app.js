@@ -24,6 +24,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  app.setName('Shopping List Generator');
   const dbPath = path.join(app.getPath('userData'), 'shopping-list.db');
   db.init(dbPath);
   createWindow();
