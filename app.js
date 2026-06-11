@@ -3,6 +3,9 @@ const path = require('path');
 const db = require('./db');
 const { autoUpdater } = require('electron-updater');
 
+// Force a consistent userData path in both dev and production
+app.setPath('userData', path.join(app.getPath('appData'), 'Shopping List Generator'));
+
 let mainWindow;
 
 function createWindow() {
@@ -24,7 +27,6 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  app.setName('Shopping List Generator');
   const dbPath = path.join(app.getPath('userData'), 'shopping-list.db');
   db.init(dbPath);
   createWindow();
